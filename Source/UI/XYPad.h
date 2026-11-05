@@ -4,13 +4,21 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "CustomLookAndFeel.h"
 #include "../Common/Parameters.h"
+#include <array>
 
 namespace GranularLab
 {
     class XYPad : public juce::Component, public juce::Timer
     {
     public:
-        XYPad(juce::AudioProcessorValueTreeState& apvts);
+        enum class ViewMode
+        {
+            Pad = 0,
+            MapX,
+            MapY
+        };
+
+        explicit XYPad(juce::AudioProcessorValueTreeState& apvts);
         ~XYPad() override;
 
         void paint(juce::Graphics& g) override;
@@ -20,9 +28,8 @@ namespace GranularLab
         void mouseDrag(const juce::MouseEvent& e) override;
         void timerCallback() override;
 
-        void setTargetParamX(int targetIdx);
-        void setTargetParamY(int targetIdx);
         void randomize();
+        void setViewMode(ViewMode mode);
 
     private:
         juce::AudioProcessorValueTreeState& apvts;
@@ -34,14 +41,37 @@ namespace GranularLab
         float targetX { 0.5f };
         float targetY { 0.5f };
 
-        juce::Rectangle<float> padArea;
-        juce::ComboBox comboTargetX;
-        juce::ComboBox comboTargetY;
+        ViewMode activeView { ViewMode::Pad };
+
+        // Header controls
+        juce::TextButton btnTabPad { "PAD" };
+        juce::TextButton btnTabMapX { "MAP X" };
+        juce::TextButton btnTabMapY { "MAP Y" };
         juce::TextButton btnRandom { "RND" };
 
-        void updateFromMouse(const juce::Point<float>& pos);
-        void applyXYToTargets();
+        juce::Rectangle<float> padArea;
+        juce::Rectangle<float> chipXArea;
+        juce::Rectangle<float> chipYArea;
 
-        juce::String getTargetName(int idx) const;
+        // Slot UI components for Macro X (4 slots)
+        struct SlotUI
+        {
+            juce::ComboBox targetCombo;
+            juce::Slider depthSlider;
+            juce::Label slotLabel;
+            std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> targetAttach;
+            std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> depthAttach;
+        };
+
+        std::array<SlotUI, 4> xSlots;
+        std::array<SlotUI, 4> ySlots;
+
+        void updateFromMouse(const juce::Point<float>& pos);
+        void setupSlotUI(SlotUI& slot, int slotIndex, bool isXAxis);
+        void updateVisibility();
+
+        juce::String getActiveMappingsSummary(bool isXAxis) const;
+
+        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(XYPad)
     };
 }
