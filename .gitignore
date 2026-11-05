@@ -1,0 +1,14 @@
+# Build directories
+build/
+bin/
+*.o
+*.a
+*.so
+*.clap
+*.vst3
+
+# IDE and temporary files
+.vscode/
+.idea/
+*.user
+.DS_Store
