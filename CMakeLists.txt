@@ -15,7 +15,9 @@ add_subdirectory(libs/JUCE)
 # Include CLAP extensions for JUCE
 add_subdirectory(libs/clap-juce-extensions EXCLUDE_FROM_ALL)
 
-# JUCE Plugin definition
+# ==============================================================================
+# 1. GRANULAR LAB (Audio Effect Plugin)
+# ==============================================================================
 juce_add_plugin(GranularLab
     COMPANY_NAME "GranularLab"
     PLUGIN_MANUFACTURER_CODE GLab
@@ -30,7 +32,6 @@ juce_add_plugin(GranularLab
     COPY_PLUGIN_AFTER_BUILD FALSE
 )
 
-# Source files
 target_sources(GranularLab PRIVATE
     Source/Common/Parameters.h
     Source/Common/LockFreeQueue.h
@@ -96,14 +97,112 @@ target_link_libraries(GranularLab PRIVATE
     clap_juce_extensions
 )
 
-# Register CLAP Target
 clap_juce_extensions_plugin(
     TARGET GranularLab
     CLAP_ID "com.granularlab.granularlab"
     CLAP_FEATURES audio-effect granular glitch filter delay reverb
 )
 
-# Custom installation target for Bitwig and Linux DAWs
+# ==============================================================================
+# 2. GRANULAR SYNTH LAB (Polyphonic Granular Synthesizer Plugin)
+# ==============================================================================
+juce_add_plugin(GranularSynthLab
+    COMPANY_NAME "GranularLab"
+    PLUGIN_MANUFACTURER_CODE GLab
+    PLUGIN_CODE GLs1
+    FORMATS VST3 Standalone
+    PRODUCT_NAME "Granular Synth Lab"
+    IS_SYNTH TRUE
+    NEEDS_MIDI_INPUT TRUE
+    NEEDS_MIDI_OUTPUT FALSE
+    IS_MIDI_EFFECT FALSE
+    EDITOR_WANTS_KEYBOARD_FOCUS TRUE
+    COPY_PLUGIN_AFTER_BUILD FALSE
+)
+
+target_sources(GranularSynthLab PRIVATE
+    Source/Common/Parameters.h
+    Source/Common/LockFreeQueue.h
+
+    Source/DSP/ModulationEngine.h
+    Source/DSP/ModulationEngine.cpp
+    Source/DSP/EffectsEngine.h
+    Source/DSP/EffectsEngine.cpp
+
+    Source/UI/CustomLookAndFeel.h
+    Source/UI/CustomLookAndFeel.cpp
+    Source/UI/XYPad.h
+    Source/UI/XYPad.cpp
+    Source/UI/EffectsPanel.h
+    Source/UI/EffectsPanel.cpp
+    Source/UI/ModulationPanel.h
+    Source/UI/ModulationPanel.cpp
+
+    Source/Synth/DSP/SampleBuffer.h
+    Source/Synth/DSP/SampleBuffer.cpp
+    Source/Synth/DSP/SynthGrain.h
+    Source/Synth/DSP/SynthGrain.cpp
+    Source/Synth/DSP/SynthVoice.h
+    Source/Synth/DSP/SynthVoice.cpp
+    Source/Synth/DSP/SynthEngine.h
+    Source/Synth/DSP/SynthEngine.cpp
+
+    Source/Synth/Presets/SynthPresetData.h
+    Source/Synth/SynthParameters.h
+
+    Source/Synth/UI/SynthPresetBar.h
+    Source/Synth/UI/SynthPresetBar.cpp
+    Source/Synth/UI/SynthSourcePanel.h
+    Source/Synth/UI/SynthSourcePanel.cpp
+    Source/Synth/UI/SynthWaveformView.h
+    Source/Synth/UI/SynthWaveformView.cpp
+    Source/Synth/UI/SynthParticleView.h
+    Source/Synth/UI/SynthParticleView.cpp
+    Source/Synth/UI/SynthADSRPanel.h
+    Source/Synth/UI/SynthADSRPanel.cpp
+
+    Source/Synth/SynthProcessor.h
+    Source/Synth/SynthProcessor.cpp
+    Source/Synth/SynthEditor.h
+    Source/Synth/SynthEditor.cpp
+)
+
+target_include_directories(GranularSynthLab PRIVATE
+    Source
+    libs/clap-juce-extensions/include
+)
+
+target_compile_definitions(GranularSynthLab PRIVATE
+    JUCE_WEB_BROWSER=0
+    JUCE_USE_CURL=0
+    JUCE_VST3_CAN_REPLACE_VST2=0
+    HAS_CLAP_JUCE_EXTENSIONS=1
+)
+
+target_link_libraries(GranularSynthLab PRIVATE
+    juce::juce_audio_utils
+    juce::juce_audio_processors
+    juce::juce_audio_formats
+    juce::juce_audio_basics
+    juce::juce_gui_extra
+    juce::juce_gui_basics
+    juce::juce_graphics
+    juce::juce_events
+    juce::juce_core
+    juce::juce_data_structures
+    juce::juce_dsp
+    clap_juce_extensions
+)
+
+clap_juce_extensions_plugin(
+    TARGET GranularSynthLab
+    CLAP_ID "com.granularlab.granularsynthlab"
+    CLAP_FEATURES instrument synthesizer granular sampler polyphonic
+)
+
+# ==============================================================================
+# Installation target for Bitwig and Linux DAWs
+# ==============================================================================
 add_custom_target(install_plugins
     COMMAND ${CMAKE_COMMAND} -E make_directory "$ENV{HOME}/.clap"
     COMMAND ${CMAKE_COMMAND} -E make_directory "$ENV{HOME}/.vst3"
@@ -111,11 +210,17 @@ add_custom_target(install_plugins
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/GranularLab_artefacts/Release/CLAP/Granular Lab.clap" "$ENV{HOME}/.clap/Granular Lab.clap"
     COMMAND ${CMAKE_COMMAND} -E echo "Installing Granular Lab.vst3 to $ENV{HOME}/.vst3/..."
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_BINARY_DIR}/GranularLab_artefacts/Release/VST3/Granular Lab.vst3" "$ENV{HOME}/.vst3/Granular Lab.vst3"
-    DEPENDS GranularLab_CLAP GranularLab_VST3
+    COMMAND ${CMAKE_COMMAND} -E echo "Installing Granular Synth Lab.clap to $ENV{HOME}/.clap/..."
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/GranularSynthLab_artefacts/Release/CLAP/Granular Synth Lab.clap" "$ENV{HOME}/.clap/Granular Synth Lab.clap"
+    COMMAND ${CMAKE_COMMAND} -E echo "Installing Granular Synth Lab.vst3 to $ENV{HOME}/.vst3/..."
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_BINARY_DIR}/GranularSynthLab_artefacts/Release/VST3/Granular Synth Lab.vst3" "$ENV{HOME}/.vst3/Granular Synth Lab.vst3"
+    DEPENDS GranularLab_CLAP GranularLab_VST3 GranularSynthLab_CLAP GranularSynthLab_VST3
     COMMENT "Installing CLAP and VST3 plugins to user audio directories (~/.clap and ~/.vst3)"
 )
 
-# Standalone DSP unit test executable
+# ==============================================================================
+# DSP Unit Tests
+# ==============================================================================
 add_executable(dsp_tests
     Tests/DSPTests.cpp
     Source/DSP/AudioBuffer.cpp
@@ -138,6 +243,33 @@ target_compile_definitions(dsp_tests PRIVATE
 target_link_libraries(dsp_tests PRIVATE
     juce::juce_core
     juce::juce_audio_basics
+    juce::juce_graphics
+    juce::juce_dsp
+)
+
+add_executable(synth_dsp_tests
+    Tests/SynthDSPTests.cpp
+    Source/Synth/DSP/SampleBuffer.cpp
+    Source/Synth/DSP/SynthGrain.cpp
+    Source/Synth/DSP/SynthVoice.cpp
+    Source/Synth/DSP/SynthEngine.cpp
+    Source/DSP/EffectsEngine.cpp
+)
+
+target_include_directories(synth_dsp_tests PRIVATE
+    Source
+    libs/JUCE/modules
+)
+
+target_compile_definitions(synth_dsp_tests PRIVATE
+    JUCE_USE_CURL=0
+    JUCE_WEB_BROWSER=0
+)
+
+target_link_libraries(synth_dsp_tests PRIVATE
+    juce::juce_core
+    juce::juce_audio_basics
+    juce::juce_audio_formats
     juce::juce_graphics
     juce::juce_dsp
 )
