@@ -56,8 +56,27 @@ namespace GranularLab
         // XY Pad Parameters
         inline constexpr auto xyX             = "xy_x";             // 0.0 to 1.0
         inline constexpr auto xyY             = "xy_y";             // 0.0 to 1.0
-        inline constexpr auto xyXTarget       = "xy_x_target";      // 0: Density, 1: Size, 2: Position, 3: Spray, 4: Pitch, 5: Cutoff, 6: Mix
-        inline constexpr auto xyYTarget       = "xy_y_target";      // 0: Density, 1: Size, 2: Position, 3: Spray, 4: Pitch, 5: Cutoff, 6: Mix
+        inline constexpr auto xyXTarget       = "xy_x_target";      // Legacy single target
+        inline constexpr auto xyYTarget       = "xy_y_target";      // Legacy single target
+
+        // XY Macro Multi-Target Mapping Parameters (Output Portal style)
+        inline constexpr auto xyXTarget1      = "xy_x_target_1";
+        inline constexpr auto xyXDepth1       = "xy_x_depth_1";
+        inline constexpr auto xyXTarget2      = "xy_x_target_2";
+        inline constexpr auto xyXDepth2       = "xy_x_depth_2";
+        inline constexpr auto xyXTarget3      = "xy_x_target_3";
+        inline constexpr auto xyXDepth3       = "xy_x_depth_3";
+        inline constexpr auto xyXTarget4      = "xy_x_target_4";
+        inline constexpr auto xyXDepth4       = "xy_x_depth_4";
+
+        inline constexpr auto xyYTarget1      = "xy_y_target_1";
+        inline constexpr auto xyYDepth1       = "xy_y_depth_1";
+        inline constexpr auto xyYTarget2      = "xy_y_target_2";
+        inline constexpr auto xyYDepth2       = "xy_y_depth_2";
+        inline constexpr auto xyYTarget3      = "xy_y_target_3";
+        inline constexpr auto xyYDepth3       = "xy_y_depth_3";
+        inline constexpr auto xyYTarget4      = "xy_y_target_4";
+        inline constexpr auto xyYDepth4       = "xy_y_depth_4";
     }
 
     enum class ModTarget : int
@@ -74,15 +93,49 @@ namespace GranularLab
 
     enum class XYTarget : int
     {
-        Density = 0,
-        GrainSize = 1,
-        Position = 2,
-        Spray = 3,
-        Pitch = 4,
-        Cutoff = 5,
-        Mix = 6,
+        None = 0,
+        Density = 1,
+        GrainSize = 2,
+        Position = 3,
+        Spray = 4,
+        Pitch = 5,
+        Pan = 6,
+        Cutoff = 7,
+        Resonance = 8,
+        DelayTime = 9,
+        DelayFeedback = 10,
+        DelayMix = 11,
+        ReverbSize = 12,
+        ReverbMix = 13,
+        SatDrive = 14,
+        ReverseProb = 15,
+        Mix = 16,
         NumTargets
     };
+
+    inline const juce::StringArray& getXYTargetNames()
+    {
+        static const juce::StringArray names = {
+            "None",
+            "Density",
+            "Grain Size",
+            "Position",
+            "Spray",
+            "Pitch",
+            "Pan",
+            "Cutoff",
+            "Resonance",
+            "Delay Time",
+            "Delay Feedback",
+            "Delay Mix",
+            "Reverb Size",
+            "Reverb Mix",
+            "Saturation",
+            "Reverse %",
+            "Mix"
+        };
+        return names;
+    }
 
     enum class EnvelopeShape : int
     {
@@ -364,7 +417,7 @@ namespace GranularLab
             juce::StringArray { "Sine", "Triangle", "Saw", "S&H" },
             0));
 
-        // XY Pad
+        // XY Pad Multi-Target Parameters
         params.push_back(std::make_unique<juce::AudioParameterFloat>(
             juce::ParameterID(ParamIDs::xyX, 1),
             "XY Pad X",
@@ -382,14 +435,64 @@ namespace GranularLab
         params.push_back(std::make_unique<juce::AudioParameterChoice>(
             juce::ParameterID(ParamIDs::xyXTarget, 1),
             "XY X Assign",
-            juce::StringArray { "Density", "Grain Size", "Position", "Spray", "Pitch", "Cutoff", "Mix" },
-            0)); // Default X -> Density
+            getXYTargetNames(),
+            1)); // Default X -> Density (index 1)
 
         params.push_back(std::make_unique<juce::AudioParameterChoice>(
             juce::ParameterID(ParamIDs::xyYTarget, 1),
             "XY Y Assign",
-            juce::StringArray { "Density", "Grain Size", "Position", "Spray", "Pitch", "Cutoff", "Mix" },
-            1)); // Default Y -> Grain Size
+            getXYTargetNames(),
+            2)); // Default Y -> Grain Size (index 2)
+
+        // Macro X Slots (1 to 4)
+        params.push_back(std::make_unique<juce::AudioParameterChoice>(
+            juce::ParameterID(ParamIDs::xyXTarget1, 1), "Macro X Target 1", getXYTargetNames(), 1)); // Density
+        params.push_back(std::make_unique<juce::AudioParameterFloat>(
+            juce::ParameterID(ParamIDs::xyXDepth1, 1), "Macro X Depth 1",
+            juce::NormalisableRange<float>(-1.0f, 1.0f, 0.01f), 1.0f));
+
+        params.push_back(std::make_unique<juce::AudioParameterChoice>(
+            juce::ParameterID(ParamIDs::xyXTarget2, 1), "Macro X Target 2", getXYTargetNames(), 0));
+        params.push_back(std::make_unique<juce::AudioParameterFloat>(
+            juce::ParameterID(ParamIDs::xyXDepth2, 1), "Macro X Depth 2",
+            juce::NormalisableRange<float>(-1.0f, 1.0f, 0.01f), 0.0f));
+
+        params.push_back(std::make_unique<juce::AudioParameterChoice>(
+            juce::ParameterID(ParamIDs::xyXTarget3, 1), "Macro X Target 3", getXYTargetNames(), 0));
+        params.push_back(std::make_unique<juce::AudioParameterFloat>(
+            juce::ParameterID(ParamIDs::xyXDepth3, 1), "Macro X Depth 3",
+            juce::NormalisableRange<float>(-1.0f, 1.0f, 0.01f), 0.0f));
+
+        params.push_back(std::make_unique<juce::AudioParameterChoice>(
+            juce::ParameterID(ParamIDs::xyXTarget4, 1), "Macro X Target 4", getXYTargetNames(), 0));
+        params.push_back(std::make_unique<juce::AudioParameterFloat>(
+            juce::ParameterID(ParamIDs::xyXDepth4, 1), "Macro X Depth 4",
+            juce::NormalisableRange<float>(-1.0f, 1.0f, 0.01f), 0.0f));
+
+        // Macro Y Slots (1 to 4)
+        params.push_back(std::make_unique<juce::AudioParameterChoice>(
+            juce::ParameterID(ParamIDs::xyYTarget1, 1), "Macro Y Target 1", getXYTargetNames(), 2)); // Grain Size
+        params.push_back(std::make_unique<juce::AudioParameterFloat>(
+            juce::ParameterID(ParamIDs::xyYDepth1, 1), "Macro Y Depth 1",
+            juce::NormalisableRange<float>(-1.0f, 1.0f, 0.01f), 1.0f));
+
+        params.push_back(std::make_unique<juce::AudioParameterChoice>(
+            juce::ParameterID(ParamIDs::xyYTarget2, 1), "Macro Y Target 2", getXYTargetNames(), 0));
+        params.push_back(std::make_unique<juce::AudioParameterFloat>(
+            juce::ParameterID(ParamIDs::xyYDepth2, 1), "Macro Y Depth 2",
+            juce::NormalisableRange<float>(-1.0f, 1.0f, 0.01f), 0.0f));
+
+        params.push_back(std::make_unique<juce::AudioParameterChoice>(
+            juce::ParameterID(ParamIDs::xyYTarget3, 1), "Macro Y Target 3", getXYTargetNames(), 0));
+        params.push_back(std::make_unique<juce::AudioParameterFloat>(
+            juce::ParameterID(ParamIDs::xyYDepth3, 1), "Macro Y Depth 3",
+            juce::NormalisableRange<float>(-1.0f, 1.0f, 0.01f), 0.0f));
+
+        params.push_back(std::make_unique<juce::AudioParameterChoice>(
+            juce::ParameterID(ParamIDs::xyYTarget4, 1), "Macro Y Target 4", getXYTargetNames(), 0));
+        params.push_back(std::make_unique<juce::AudioParameterFloat>(
+            juce::ParameterID(ParamIDs::xyYDepth4, 1), "Macro Y Depth 4",
+            juce::NormalisableRange<float>(-1.0f, 1.0f, 0.01f), 0.0f));
 
         return { params.begin(), params.end() };
     }

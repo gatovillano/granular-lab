@@ -65,6 +65,25 @@ namespace GranularSynthLab
         inline constexpr auto xyY             = GranularLab::ParamIDs::xyY;
         inline constexpr auto xyXTarget       = GranularLab::ParamIDs::xyXTarget;
         inline constexpr auto xyYTarget       = GranularLab::ParamIDs::xyYTarget;
+
+        inline constexpr auto xyXTarget1      = GranularLab::ParamIDs::xyXTarget1;
+        inline constexpr auto xyXDepth1       = GranularLab::ParamIDs::xyXDepth1;
+        inline constexpr auto xyXTarget2      = GranularLab::ParamIDs::xyXTarget2;
+        inline constexpr auto xyXDepth2       = GranularLab::ParamIDs::xyXDepth2;
+        inline constexpr auto xyXTarget3      = GranularLab::ParamIDs::xyXTarget3;
+        inline constexpr auto xyXDepth3       = GranularLab::ParamIDs::xyXDepth3;
+        inline constexpr auto xyXTarget4      = GranularLab::ParamIDs::xyXTarget4;
+        inline constexpr auto xyXDepth4       = GranularLab::ParamIDs::xyXDepth4;
+
+        inline constexpr auto xyYTarget1      = GranularLab::ParamIDs::xyYTarget1;
+        inline constexpr auto xyYDepth1       = GranularLab::ParamIDs::xyYDepth1;
+        inline constexpr auto xyYTarget2      = GranularLab::ParamIDs::xyYTarget2;
+        inline constexpr auto xyYDepth2       = GranularLab::ParamIDs::xyYDepth2;
+        inline constexpr auto xyYTarget3      = GranularLab::ParamIDs::xyYTarget3;
+        inline constexpr auto xyYDepth3       = GranularLab::ParamIDs::xyYDepth3;
+        inline constexpr auto xyYTarget4      = GranularLab::ParamIDs::xyYTarget4;
+        inline constexpr auto xyYDepth4       = GranularLab::ParamIDs::xyYDepth4;
+
         inline constexpr auto outputGain      = GranularLab::ParamIDs::outputGain;
     }
 
@@ -215,7 +234,7 @@ namespace GranularSynthLab
             ParamIDs::outputGain, "Output Gain",
             juce::NormalisableRange<float>(-36.0f, 12.0f, 0.1f), 0.0f));
 
-        // XY Pad
+        // XY Pad Multi-Target
         params.push_back(std::make_unique<juce::AudioParameterFloat>(
             ParamIDs::xyX, "XY Pad X", 0.0f, 1.0f, 0.5f));
 
@@ -224,11 +243,61 @@ namespace GranularSynthLab
 
         params.push_back(std::make_unique<juce::AudioParameterChoice>(
             ParamIDs::xyXTarget, "XY X Target",
-            juce::StringArray { "Density", "Grain Size", "Position", "Spray", "Pitch", "Cutoff", "Mix" }, 0));
+            GranularLab::getXYTargetNames(), 1));
 
         params.push_back(std::make_unique<juce::AudioParameterChoice>(
             ParamIDs::xyYTarget, "XY Y Target",
-            juce::StringArray { "Density", "Grain Size", "Position", "Spray", "Pitch", "Cutoff", "Mix" }, 1));
+            GranularLab::getXYTargetNames(), 2));
+
+        // Macro X Slots (1 to 4)
+        params.push_back(std::make_unique<juce::AudioParameterChoice>(
+            ParamIDs::xyXTarget1, "Macro X Target 1", GranularLab::getXYTargetNames(), 1));
+        params.push_back(std::make_unique<juce::AudioParameterFloat>(
+            ParamIDs::xyXDepth1, "Macro X Depth 1",
+            juce::NormalisableRange<float>(-1.0f, 1.0f, 0.01f), 1.0f));
+
+        params.push_back(std::make_unique<juce::AudioParameterChoice>(
+            ParamIDs::xyXTarget2, "Macro X Target 2", GranularLab::getXYTargetNames(), 0));
+        params.push_back(std::make_unique<juce::AudioParameterFloat>(
+            ParamIDs::xyXDepth2, "Macro X Depth 2",
+            juce::NormalisableRange<float>(-1.0f, 1.0f, 0.01f), 0.0f));
+
+        params.push_back(std::make_unique<juce::AudioParameterChoice>(
+            ParamIDs::xyXTarget3, "Macro X Target 3", GranularLab::getXYTargetNames(), 0));
+        params.push_back(std::make_unique<juce::AudioParameterFloat>(
+            ParamIDs::xyXDepth3, "Macro X Depth 3",
+            juce::NormalisableRange<float>(-1.0f, 1.0f, 0.01f), 0.0f));
+
+        params.push_back(std::make_unique<juce::AudioParameterChoice>(
+            ParamIDs::xyXTarget4, "Macro X Target 4", GranularLab::getXYTargetNames(), 0));
+        params.push_back(std::make_unique<juce::AudioParameterFloat>(
+            ParamIDs::xyXDepth4, "Macro X Depth 4",
+            juce::NormalisableRange<float>(-1.0f, 1.0f, 0.01f), 0.0f));
+
+        // Macro Y Slots (1 to 4)
+        params.push_back(std::make_unique<juce::AudioParameterChoice>(
+            ParamIDs::xyYTarget1, "Macro Y Target 1", GranularLab::getXYTargetNames(), 2));
+        params.push_back(std::make_unique<juce::AudioParameterFloat>(
+            ParamIDs::xyYDepth1, "Macro Y Depth 1",
+            juce::NormalisableRange<float>(-1.0f, 1.0f, 0.01f), 1.0f));
+
+        params.push_back(std::make_unique<juce::AudioParameterChoice>(
+            ParamIDs::xyYTarget2, "Macro Y Target 2", GranularLab::getXYTargetNames(), 0));
+        params.push_back(std::make_unique<juce::AudioParameterFloat>(
+            ParamIDs::xyYDepth2, "Macro Y Depth 2",
+            juce::NormalisableRange<float>(-1.0f, 1.0f, 0.01f), 0.0f));
+
+        params.push_back(std::make_unique<juce::AudioParameterChoice>(
+            ParamIDs::xyYTarget3, "Macro Y Target 3", GranularLab::getXYTargetNames(), 0));
+        params.push_back(std::make_unique<juce::AudioParameterFloat>(
+            ParamIDs::xyYDepth3, "Macro Y Depth 3",
+            juce::NormalisableRange<float>(-1.0f, 1.0f, 0.01f), 0.0f));
+
+        params.push_back(std::make_unique<juce::AudioParameterChoice>(
+            ParamIDs::xyYTarget4, "Macro Y Target 4", GranularLab::getXYTargetNames(), 0));
+        params.push_back(std::make_unique<juce::AudioParameterFloat>(
+            ParamIDs::xyYDepth4, "Macro Y Depth 4",
+            juce::NormalisableRange<float>(-1.0f, 1.0f, 0.01f), 0.0f));
 
         // Modulation LFO 1 & 2
         params.push_back(std::make_unique<juce::AudioParameterFloat>(

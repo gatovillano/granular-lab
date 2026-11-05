@@ -116,30 +116,58 @@ namespace GranularSynthLab
 
         auto mod = modEngine.process(lfo1Cfg, lfo2Cfg);
 
-        // Apply Modulation offsets
-        basePos         = std::clamp(basePos + mod.positionMod, 0.0f, 1.0f);
-        baseSize        = std::clamp(baseSize + mod.grainSizeMod, 10.0f, 500.0f);
-        baseDensity     = std::clamp(baseDensity + mod.densityMod, 1.0f, 100.0f);
-        basePitchRand   = std::clamp(basePitchRand + mod.pitchMod, 0.0f, 24.0f);
-        basePanRand     = std::clamp(basePanRand + mod.panMod, 0.0f, 1.0f);
-        filterCutoffVal = std::clamp(filterCutoffVal + mod.cutoffMod, 20.0f, 20000.0f);
+        // Accumulate XY Macro Multi-Target Modulations (Output Portal style)
+        float xyMod[static_cast<int>(GranularLab::XYTarget::NumTargets)] = { 0.0f };
 
-        // Apply XY Pad mappings
-        auto applyPadAxis = [&](int target, float value)
+        const auto* pTargetX1 = apvts.getRawParameterValue(ParamIDs::xyXTarget1);
+        const auto* pDepthX1  = apvts.getRawParameterValue(ParamIDs::xyXDepth1);
+        const auto* pTargetX2 = apvts.getRawParameterValue(ParamIDs::xyXTarget2);
+        const auto* pDepthX2  = apvts.getRawParameterValue(ParamIDs::xyXDepth2);
+        const auto* pTargetX3 = apvts.getRawParameterValue(ParamIDs::xyXTarget3);
+        const auto* pDepthX3  = apvts.getRawParameterValue(ParamIDs::xyXDepth3);
+        const auto* pTargetX4 = apvts.getRawParameterValue(ParamIDs::xyXTarget4);
+        const auto* pDepthX4  = apvts.getRawParameterValue(ParamIDs::xyXDepth4);
+
+        const auto* pTargetY1 = apvts.getRawParameterValue(ParamIDs::xyYTarget1);
+        const auto* pDepthY1  = apvts.getRawParameterValue(ParamIDs::xyYDepth1);
+        const auto* pTargetY2 = apvts.getRawParameterValue(ParamIDs::xyYTarget2);
+        const auto* pDepthY2  = apvts.getRawParameterValue(ParamIDs::xyYDepth2);
+        const auto* pTargetY3 = apvts.getRawParameterValue(ParamIDs::xyYTarget3);
+        const auto* pDepthY3  = apvts.getRawParameterValue(ParamIDs::xyYDepth3);
+        const auto* pTargetY4 = apvts.getRawParameterValue(ParamIDs::xyYTarget4);
+        const auto* pDepthY4  = apvts.getRawParameterValue(ParamIDs::xyYDepth4);
+
+        auto addMod = [&](const std::atomic<float>* tPtr, const std::atomic<float>* dPtr, float macroVal)
         {
-            switch (target)
+            if (tPtr && dPtr)
             {
-                case 0: baseDensity = 1.0f + value * 99.0f; break;
-                case 1: baseSize = 10.0f + value * 490.0f; break;
-                case 2: basePos = value; break;
-                case 3: baseSpray = value; break;
-                case 4: basePitchRand = value * 24.0f; break;
-                case 5: filterCutoffVal = 20.0f * std::pow(1000.0f, value); break;
-                default: break;
+                int t = static_cast<int>(tPtr->load(std::memory_order_relaxed));
+                float d = dPtr->load(std::memory_order_relaxed);
+                if (t > 0 && t < static_cast<int>(GranularLab::XYTarget::NumTargets))
+                    xyMod[t] += macroVal * d;
             }
         };
-        applyPadAxis(padAssignXVal, padXVal);
-        applyPadAxis(padAssignYVal, padYVal);
+
+        addMod(pTargetX1, pDepthX1, padXVal);
+        addMod(pTargetX2, pDepthX2, padXVal);
+        addMod(pTargetX3, pDepthX3, padXVal);
+        addMod(pTargetX4, pDepthX4, padXVal);
+
+        addMod(pTargetY1, pDepthY1, padYVal);
+        addMod(pTargetY2, pDepthY2, padYVal);
+        addMod(pTargetY3, pDepthY3, padYVal);
+        addMod(pTargetY4, pDepthY4, padYVal);
+
+        // Apply Modulation offsets + XY Macro offsets
+        basePos         = std::clamp(basePos + mod.positionMod + xyMod[static_cast<int>(GranularLab::XYTarget::Position)], 0.0f, 1.0f);
+        baseSize        = std::clamp(baseSize + mod.grainSizeMod + xyMod[static_cast<int>(GranularLab::XYTarget::GrainSize)] * 490.0f, 10.0f, 500.0f);
+        baseDensity     = std::clamp(baseDensity + mod.densityMod + xyMod[static_cast<int>(GranularLab::XYTarget::Density)] * 99.0f, 1.0f, 100.0f);
+        basePitchRand   = std::clamp(basePitchRand + mod.pitchMod + xyMod[static_cast<int>(GranularLab::XYTarget::Pitch)] * 24.0f, 0.0f, 24.0f);
+        basePanRand     = std::clamp(basePanRand + mod.panMod + xyMod[static_cast<int>(GranularLab::XYTarget::Pan)], 0.0f, 1.0f);
+        baseSpray       = std::clamp(baseSpray + xyMod[static_cast<int>(GranularLab::XYTarget::Spray)], 0.0f, 1.0f);
+        baseReverse     = std::clamp(baseReverse + xyMod[static_cast<int>(GranularLab::XYTarget::ReverseProb)], 0.0f, 1.0f);
+
+        filterCutoffVal = std::clamp(filterCutoffVal * std::pow(2.0f, (mod.cutoffMod / 2400.0f) + xyMod[static_cast<int>(GranularLab::XYTarget::Cutoff)] * 4.0f), 20.0f, 20000.0f);
 
         // 5. Build Voice Parameters
         VoiceParams voiceParams;

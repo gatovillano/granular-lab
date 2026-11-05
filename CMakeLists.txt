@@ -12,6 +12,24 @@ add_compile_definitions(JUCE_SILENCE_GLOBAL_VBLANK_WARNING=1)
 # Include JUCE from libs/JUCE
 add_subdirectory(libs/JUCE)
 
+# Apply JUCE 8 compatibility patch to clap-juce-extensions if needed
+find_program(GIT_EXECUTABLE git)
+if(GIT_EXECUTABLE AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/patches/clap-juce8.patch")
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} apply --check ${CMAKE_CURRENT_SOURCE_DIR}/patches/clap-juce8.patch
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/clap-juce-extensions
+        RESULT_VARIABLE PATCH_CHECK_RESULT
+        OUTPUT_QUIET ERROR_QUIET
+    )
+    if(PATCH_CHECK_RESULT EQUAL 0)
+        message(STATUS "Applying JUCE 8 patch to clap-juce-extensions...")
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} apply ${CMAKE_CURRENT_SOURCE_DIR}/patches/clap-juce8.patch
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/clap-juce-extensions
+        )
+    endif()
+endif()
+
 # Include CLAP extensions for JUCE
 add_subdirectory(libs/clap-juce-extensions EXCLUDE_FROM_ALL)
 

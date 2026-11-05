@@ -45,6 +45,12 @@ Instrumento musical virtual polifónico controlado por MIDI que genera sonidos a
 
 ## 🛠️ Compilación e Instalación
 
+### Clonar Repositorio
+```bash
+git clone --recursive https://github.com/gatovillano/granular-lab.git
+cd granular-lab
+```
+
 ### Requisitos en Ubuntu (24.04 / 26.04)
 ```bash
 sudo apt-get install -y build-essential cmake ninja-build \

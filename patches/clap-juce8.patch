@@ -1,0 +1,84 @@
+diff --git a/src/wrapper/clap-juce-wrapper.cpp b/src/wrapper/clap-juce-wrapper.cpp
+index 7e026bb..96022d0 100644
+--- a/src/wrapper/clap-juce-wrapper.cpp
++++ b/src/wrapper/clap-juce-wrapper.cpp
+@@ -34,8 +34,12 @@ JUCE_END_IGNORE_WARNINGS_GCC_LIKE
+ #include <clap-juce-extensions/clap-juce-extensions.h>
+ 
+ #if JUCE_LINUX
++#if JUCE_VERSION >= 0x080000
++#include <juce_audio_plugin_client/detail/juce_LinuxMessageThread.h>
++#else
+ #include <juce_audio_plugin_client/utility/juce_LinuxMessageThread.h>
+ #endif
++#endif
+ 
+ #define FIXME(x)                                                                                   \
+     {                                                                                              \
+@@ -182,7 +186,11 @@ class ClapJuceWrapper : public clap::helpers::Plugin<clap::helpers::Misbehaviour
+         juce::ScopedJuceInitialiser_GUI libraryInitialiser;
+         const juce::MessageManagerLock mmLock;
+ 
++#if JUCE_VERSION >= 0x080000
++        while (juce::detail::dispatchNextMessageOnSystemQueue(true))
++#else
+         while (juce::dispatchNextMessageOnSystemQueue(true))
++#endif
+         {
+         }
+ #endif
+@@ -281,6 +289,46 @@ class ClapJuceWrapper : public clap::helpers::Plugin<clap::helpers::Misbehaviour
+     /*
+      * According to the JUCE docs this is *only* called on the processing thread
+      */
++#if JUCE_VERSION >= 0x080000
++    juce::Optional<juce::AudioPlayHead::PositionInfo> getPosition() const override
++    {
++        if (!hasTransportInfo || !transportInfo)
++            return {};
++
++        juce::AudioPlayHead::PositionInfo info;
++        auto flags = transportInfo->flags;
++
++        if (flags & CLAP_TRANSPORT_HAS_TEMPO)
++            info.setBpm(transportInfo->tempo);
++
++        if (flags & CLAP_TRANSPORT_HAS_TIME_SIGNATURE)
++        {
++            juce::AudioPlayHead::TimeSignature ts;
++            ts.numerator = (int) transportInfo->tsig_num;
++            ts.denominator = (int) transportInfo->tsig_denom;
++            info.setTimeSignature(ts);
++        }
++
++        if (flags & CLAP_TRANSPORT_HAS_BEATS_TIMELINE)
++        {
++            info.setPpqPosition(1.0 * transportInfo->song_pos_beats / CLAP_BEATTIME_FACTOR);
++            info.setPpqPositionOfLastBarStart(1.0 * transportInfo->bar_start / CLAP_BEATTIME_FACTOR);
++        }
++
++        if (flags & CLAP_TRANSPORT_HAS_SECONDS_TIMELINE)
++        {
++            double timeInSec = 1.0 * transportInfo->song_pos_seconds / CLAP_SECTIME_FACTOR;
++            info.setTimeInSeconds(timeInSec);
++            info.setTimeInSamples((int64_t)(timeInSec * sampleRate()));
++        }
++
++        info.setIsPlaying(flags & CLAP_TRANSPORT_IS_PLAYING);
++        info.setIsRecording(flags & CLAP_TRANSPORT_IS_RECORDING);
++        info.setIsLooping(flags & CLAP_TRANSPORT_IS_LOOP_ACTIVE);
++
++        return info;
++    }
++#else
+     bool getCurrentPosition(juce::AudioPlayHead::CurrentPositionInfo &info) override
+     {
+         if (hasTransportInfo && transportInfo)
+@@ -312,6 +360,7 @@ class ClapJuceWrapper : public clap::helpers::Plugin<clap::helpers::Misbehaviour
+         }
+         return hasTransportInfo;
+     }
++#endif
+ 
+     void parameterValueChanged(int, float newValue) override
+     {

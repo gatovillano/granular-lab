@@ -103,6 +103,14 @@ namespace GranularLab
         std::atomic<float>* pLfo2Target { nullptr };
         std::atomic<float>* pLfo2Shape { nullptr };
 
+        // XY Macro Multi-Target Pointers
+        std::atomic<float>* pX { nullptr };
+        std::atomic<float>* pY { nullptr };
+        std::array<std::atomic<float>*, 4> pXTargets { nullptr, nullptr, nullptr, nullptr };
+        std::array<std::atomic<float>*, 4> pXDepths { nullptr, nullptr, nullptr, nullptr };
+        std::array<std::atomic<float>*, 4> pYTargets { nullptr, nullptr, nullptr, nullptr };
+        std::array<std::atomic<float>*, 4> pYDepths { nullptr, nullptr, nullptr, nullptr };
+
         juce::AudioBuffer<float> wetBuffer;
 
         void cacheParameterPointers();
