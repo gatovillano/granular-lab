@@ -73,9 +73,9 @@ namespace GranularLab
         g.drawVerticalLine(static_cast<int>(centerScanX), bounds.getY() + 4.0f, bounds.getBottom() - 4.0f);
 
         // Render stereo waveform
-        if (!minL.empty())
+        size_t n = std::min({ minL.size(), maxL.size(), minR.size(), maxR.size() });
+        if (n > 0)
         {
-            size_t n = minL.size();
             float halfH = (bounds.getHeight() - 8.0f) * 0.45f;
             float stepX = bounds.getWidth() / static_cast<float>(n);
 

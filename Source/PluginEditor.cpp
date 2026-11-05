@@ -13,7 +13,7 @@ namespace GranularLab
           effectsPanel(p.getAPVTS()),
           modulationPanel(p.getAPVTS())
     {
-        juce::LookAndFeel::setDefaultLookAndFeel(&customLookAndFeel);
+        setLookAndFeel(&customLookAndFeel);
 
         addAndMakeVisible(presetBar);
         addAndMakeVisible(xyPad);
@@ -84,7 +84,7 @@ namespace GranularLab
 
     GranularLabAudioProcessorEditor::~GranularLabAudioProcessorEditor()
     {
-        juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
+        setLookAndFeel(nullptr);
     }
 
     void GranularLabAudioProcessorEditor::setupKnob(KnobWithLabel& k, const juce::String& paramId, const juce::String& labelText)

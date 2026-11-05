@@ -176,10 +176,11 @@ namespace GranularLab
         g.setColour(CustomLookAndFeel::border().withAlpha(0.35f));
         float midX = padArea.getX() + padArea.getWidth() * 0.5f;
         float midY = padArea.getY() + padArea.getHeight() * 0.5f;
+        const float dashes[] = { 4.0f, 4.0f };
         g.drawDashedLine(juce::Line<float>(midX, padArea.getY(), midX, padArea.getBottom()),
-                         nullptr, 0, 1.0f);
+                         dashes, 2, 1.0f);
         g.drawDashedLine(juce::Line<float>(padArea.getX(), midY, padArea.getRight(), midY),
-                         nullptr, 0, 1.0f);
+                         dashes, 2, 1.0f);
 
         // Grid quadrants
         for (int i = 1; i <= 3; ++i)

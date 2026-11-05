@@ -38,7 +38,8 @@ namespace GranularLab
         g.drawHorizontalLine(static_cast<int>(midY), bounds.getX() + 4.0f, bounds.getRight() - 4.0f);
 
         // Draw grains
-        for (size_t i = 0; i < currentSnapshot.activeCount; ++i)
+        size_t count = std::min(currentSnapshot.activeCount, MAX_VISUAL_GRAINS);
+        for (size_t i = 0; i < count; ++i)
         {
             const auto& gr = currentSnapshot.grains[i];
             if (!gr.active) continue;
