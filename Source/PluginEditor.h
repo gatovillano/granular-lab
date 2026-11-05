@@ -13,7 +13,8 @@
 
 namespace GranularLab
 {
-    class GranularLabAudioProcessorEditor : public juce::AudioProcessorEditor
+    class GranularLabAudioProcessorEditor : public juce::AudioProcessorEditor,
+                                            public juce::Timer
     {
     public:
         explicit GranularLabAudioProcessorEditor(GranularLabAudioProcessor&);
@@ -21,6 +22,7 @@ namespace GranularLab
 
         void paint(juce::Graphics&) override;
         void resized() override;
+        void timerCallback() override;
 
     private:
         GranularLabAudioProcessor& processorRef;

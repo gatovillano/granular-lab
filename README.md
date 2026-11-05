@@ -4,6 +4,8 @@ Suite profesional de plugins de audio granular en tiempo real para Linux (Ubuntu
 
 Desarrollado en C++20 con JUCE 8 y extensiones CLAP (`clap-juce-extensions`), optimizado para procesamiento en tiempo real con cero asignación dinámica en el hilo de audio (*zero allocation in audio thread*), colas libres de bloqueo (*lock-free queues*) y diseño gráfico en tonalidades oscuras estilo grafito/neón.
 
+![Granular Lab UI](docs/screenshots/granular-lab.png)
+
 ---
 
 ## 📦 Plugins Incluidos en el Proyecto
@@ -15,13 +17,16 @@ Plugin de inserción diseñado para transformar señales entrantes (voces, sinte
 - **Polifonía de Granos**: Hasta 128 granos simultáneos con interpolación Hermite cúbica.
 - **Envolventes**: Hann, Gaussian, Tukey, Triangle.
 - **26 Presets de fábrica**: Ambient, Rhythmic, Textures, Drones, Glitch, Lo-Fi y Experimental.
-- **XY Pad**: Control bidireccional expresivo y aleatorizador.
+- **XY Pad Multi-Target**: Control bidireccional expresivo con mapeo simultáneo a múltiples destinos (hasta 4 slots por eje X e Y) con animación en tiempo real del arco y aguja de los knobs modulados.
 - **Efectos Integrados**: Filtro SVF, Stereo Delay, Algorithmic Reverb y Saturación estilo cinta.
 - **Modulación**: Doble LFO sincronizable.
 
 ---
 
 ### 2. 🎹 GRANULAR SYNTH LAB (Sintetizador Granular Polifónico)
+
+![Granular Synth Lab UI](docs/screenshots/granular-synth-lab.png)
+
 Instrumento musical virtual polifónico controlado por MIDI que genera sonidos a partir de fuentes de audio granulares híbridas.
 - **Tipo**: Instrumento virtual sintetizador (CLAP / VST3 / Standalone).
 - **Polifonía MIDI**: Hasta 16 voces con seguimiento de tono cromático (1v/oct relative a nota raíz C3) y sensibilidad de velocidad.

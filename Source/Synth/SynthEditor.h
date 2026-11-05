@@ -17,7 +17,8 @@
 
 namespace GranularSynthLab
 {
-    class SynthEditor : public juce::AudioProcessorEditor
+    class SynthEditor : public juce::AudioProcessorEditor,
+                        public juce::Timer
     {
     public:
         explicit SynthEditor(SynthProcessor& processor);
@@ -25,6 +26,7 @@ namespace GranularSynthLab
 
         void paint(juce::Graphics& g) override;
         void resized() override;
+        void timerCallback() override;
 
     private:
         SynthProcessor& processor;

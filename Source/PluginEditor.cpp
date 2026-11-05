@@ -80,10 +80,13 @@ namespace GranularLab
         setSize(1000, 720);
         setResizable(true, true);
         setResizeLimits(880, 640, 1400, 1000);
+
+        startTimerHz(60);
     }
 
     GranularLabAudioProcessorEditor::~GranularLabAudioProcessorEditor()
     {
+        stopTimer();
         setLookAndFeel(nullptr);
     }
 
@@ -181,5 +184,84 @@ namespace GranularLab
         bottomDeck.removeFromTop(4);
         effectsPanel.setBounds(bottomDeck);
         modulationPanel.setBounds(bottomDeck);
+    }
+
+    void GranularLabAudioProcessorEditor::timerCallback()
+    {
+        auto& apvts = processorRef.getAPVTS();
+
+        const auto* pX = apvts.getRawParameterValue(ParamIDs::xyX);
+        const auto* pY = apvts.getRawParameterValue(ParamIDs::xyY);
+
+        float macroX = pX ? pX->load(std::memory_order_relaxed) : 0.5f;
+        float macroY = pY ? pY->load(std::memory_order_relaxed) : 0.5f;
+
+        float xyMod[static_cast<int>(XYTarget::NumTargets)] = { 0.0f };
+
+        std::atomic<float>* pXTargets[4] = {
+            apvts.getRawParameterValue(ParamIDs::xyXTarget1),
+            apvts.getRawParameterValue(ParamIDs::xyXTarget2),
+            apvts.getRawParameterValue(ParamIDs::xyXTarget3),
+            apvts.getRawParameterValue(ParamIDs::xyXTarget4)
+        };
+        std::atomic<float>* pXDepths[4] = {
+            apvts.getRawParameterValue(ParamIDs::xyXDepth1),
+            apvts.getRawParameterValue(ParamIDs::xyXDepth2),
+            apvts.getRawParameterValue(ParamIDs::xyXDepth3),
+            apvts.getRawParameterValue(ParamIDs::xyXDepth4)
+        };
+        std::atomic<float>* pYTargets[4] = {
+            apvts.getRawParameterValue(ParamIDs::xyYTarget1),
+            apvts.getRawParameterValue(ParamIDs::xyYTarget2),
+            apvts.getRawParameterValue(ParamIDs::xyYTarget3),
+            apvts.getRawParameterValue(ParamIDs::xyYTarget4)
+        };
+        std::atomic<float>* pYDepths[4] = {
+            apvts.getRawParameterValue(ParamIDs::xyYDepth1),
+            apvts.getRawParameterValue(ParamIDs::xyYDepth2),
+            apvts.getRawParameterValue(ParamIDs::xyYDepth3),
+            apvts.getRawParameterValue(ParamIDs::xyYDepth4)
+        };
+
+        for (int s = 0; s < 4; ++s)
+        {
+            if (pXTargets[s] && pXDepths[s])
+            {
+                int t = static_cast<int>(pXTargets[s]->load(std::memory_order_relaxed));
+                float d = pXDepths[s]->load(std::memory_order_relaxed);
+                if (t > 0 && t < static_cast<int>(XYTarget::NumTargets))
+                    xyMod[t] += macroX * d;
+            }
+
+            if (pYTargets[s] && pYDepths[s])
+            {
+                int t = static_cast<int>(pYTargets[s]->load(std::memory_order_relaxed));
+                float d = pYDepths[s]->load(std::memory_order_relaxed);
+                if (t > 0 && t < static_cast<int>(XYTarget::NumTargets))
+                    xyMod[t] += macroY * d;
+            }
+        }
+
+        auto updateSlider = [&](juce::Slider& s, XYTarget target)
+        {
+            float mod = xyMod[static_cast<int>(target)];
+            float cur = static_cast<float>(s.getProperties().getWithDefault("macroMod", 0.0f));
+            if (std::abs(mod - cur) > 0.001f)
+            {
+                s.getProperties().set("macroMod", mod);
+                s.repaint();
+            }
+        };
+
+        updateSlider(knobDensity.slider, XYTarget::Density);
+        updateSlider(knobGrainSize.slider, XYTarget::GrainSize);
+        updateSlider(knobPosition.slider, XYTarget::Position);
+        updateSlider(knobSpray.slider, XYTarget::Spray);
+        updateSlider(knobPitch.slider, XYTarget::Pitch);
+        updateSlider(knobPan.slider, XYTarget::Pan);
+        updateSlider(knobReverse.slider, XYTarget::ReverseProb);
+        updateSlider(knobMix.slider, XYTarget::Mix);
+
+        effectsPanel.updateMacroModulations(xyMod);
     }
 }

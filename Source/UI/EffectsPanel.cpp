@@ -164,4 +164,29 @@ namespace GranularLab
         satMixLabel.setBounds(colSat.removeFromBottom(16));
         satMixSlider.setBounds(colSat);
     }
+
+    void EffectsPanel::updateMacroModulations(const float* xyMod)
+    {
+        if (xyMod == nullptr) return;
+
+        auto updateSlider = [&](juce::Slider& s, XYTarget target)
+        {
+            float mod = xyMod[static_cast<int>(target)];
+            float cur = static_cast<float>(s.getProperties().getWithDefault("macroMod", 0.0f));
+            if (std::abs(mod - cur) > 0.001f)
+            {
+                s.getProperties().set("macroMod", mod);
+                s.repaint();
+            }
+        };
+
+        updateSlider(filterCutoffSlider, XYTarget::Cutoff);
+        updateSlider(filterResoSlider, XYTarget::Resonance);
+        updateSlider(delayTimeSlider, XYTarget::DelayTime);
+        updateSlider(delayFeedbackSlider, XYTarget::DelayFeedback);
+        updateSlider(delayMixSlider, XYTarget::DelayMix);
+        updateSlider(reverbSizeSlider, XYTarget::ReverbSize);
+        updateSlider(reverbMixSlider, XYTarget::ReverbMix);
+        updateSlider(satDriveSlider, XYTarget::SatDrive);
+    }
 }

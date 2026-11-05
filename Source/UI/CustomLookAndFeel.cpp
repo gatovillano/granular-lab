@@ -25,6 +25,10 @@ namespace GranularLab
         auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.5f;
         auto center = bounds.getCentre();
 
+        // Check if there is an active macro modulation offset on this slider
+        float modOffset = static_cast<float>(slider.getProperties().getWithDefault("macroMod", 0.0f));
+        float effectivePos = std::clamp(sliderPosProportional + modOffset, 0.0f, 1.0f);
+
         // Background track arc
         auto trackRadius = radius - 5.0f;
         juce::Path bgArc;
@@ -34,8 +38,32 @@ namespace GranularLab
         g.setColour(border());
         g.strokePath(bgArc, juce::PathStrokeType(4.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
-        // Active value arc
-        auto toAngle = rotaryStartAngle + sliderPosProportional * (rotaryEndAngle - rotaryStartAngle);
+        // If modulated, draw the glowing modulation trail connecting base value to modulated value
+        if (std::abs(modOffset) > 0.001f)
+        {
+            float baseAngle = rotaryStartAngle + sliderPosProportional * (rotaryEndAngle - rotaryStartAngle);
+            float effAngle  = rotaryStartAngle + effectivePos * (rotaryEndAngle - rotaryStartAngle);
+
+            float startMod = std::min(baseAngle, effAngle);
+            float endMod   = std::max(baseAngle, effAngle);
+
+            juce::Path modArc;
+            modArc.addCentredArc(center.x, center.y, trackRadius, trackRadius, 0.0f,
+                                 startMod, endMod, true);
+
+            juce::Colour modColor = (modOffset > 0.0f) ? accentCyan() : accentViolet();
+
+            // Glow underneath
+            g.setColour(modColor.withAlpha(0.35f));
+            g.strokePath(modArc, juce::PathStrokeType(7.5f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+
+            // Core modulation arc
+            g.setColour(modColor);
+            g.strokePath(modArc, juce::PathStrokeType(4.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+        }
+
+        // Active value arc - drawn up to effectivePos so the arc visually tracks macro movement!
+        auto toAngle = rotaryStartAngle + effectivePos * (rotaryEndAngle - rotaryStartAngle);
         juce::Path valArc;
         valArc.addCentredArc(center.x, center.y, trackRadius, trackRadius, 0.0f,
                              rotaryStartAngle, toAngle, true);
@@ -53,17 +81,31 @@ namespace GranularLab
         g.setColour(border().brighter(0.1f));
         g.drawEllipse(center.x - innerRadius, center.y - innerRadius, innerRadius * 2.0f, innerRadius * 2.0f, 1.2f);
 
-        // Indicator pip / pointer
+        // If modulated, draw a subtle notch/pip at the base position so user knows original knob setting
+        if (std::abs(modOffset) > 0.001f)
+        {
+            float baseAngle = rotaryStartAngle + sliderPosProportional * (rotaryEndAngle - rotaryStartAngle);
+            juce::Point<float> basePip(center.x + (innerRadius - 3.5f) * std::cos(baseAngle - juce::MathConstants<float>::halfPi),
+                                       center.y + (innerRadius - 3.5f) * std::sin(baseAngle - juce::MathConstants<float>::halfPi));
+            g.setColour(juce::Colour(0x99ffffff));
+            g.fillEllipse(basePip.x - 2.0f, basePip.y - 2.0f, 4.0f, 4.0f);
+        }
+
+        // Active indicator pip / pointer at effectivePos (rotates in real-time with the XY pad!)
         juce::Point<float> pip(center.x + (innerRadius - 4.0f) * std::cos(toAngle - juce::MathConstants<float>::halfPi),
                                center.y + (innerRadius - 4.0f) * std::sin(toAngle - juce::MathConstants<float>::halfPi));
 
-        g.setColour(accentCyan());
-        g.fillEllipse(pip.x - 2.5f, pip.y - 2.5f, 5.0f, 5.0f);
+        juce::Colour pipColor = (std::abs(modOffset) > 0.001f)
+            ? ((modOffset > 0.0f) ? accentCyan() : accentViolet())
+            : accentCyan();
 
-        // Subtle glow if mouse is over
-        if (slider.isMouseOverOrDragging())
+        g.setColour(pipColor);
+        g.fillEllipse(pip.x - 3.0f, pip.y - 3.0f, 6.0f, 6.0f);
+
+        // Subtle glow if mouse is over or actively modulated
+        if (slider.isMouseOverOrDragging() || std::abs(modOffset) > 0.001f)
         {
-            g.setColour(accentCyan().withAlpha(0.25f));
+            g.setColour(pipColor.withAlpha(0.28f));
             g.drawEllipse(center.x - innerRadius, center.y - innerRadius, innerRadius * 2.0f, innerRadius * 2.0f, 2.5f);
         }
     }

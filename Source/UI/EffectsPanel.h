@@ -15,6 +15,7 @@ namespace GranularLab
 
         void paint(juce::Graphics& g) override;
         void resized() override;
+        void updateMacroModulations(const float* xyMod);
 
     private:
         juce::AudioProcessorValueTreeState& apvts;
